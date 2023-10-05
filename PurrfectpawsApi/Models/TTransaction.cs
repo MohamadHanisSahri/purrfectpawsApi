@@ -16,4 +16,10 @@ public partial class TTransaction
     public DateTime TransactionDate { get; set; }
 
     public decimal TransactionAmount { get; set; }
+
+    public virtual TCart Cart { get; set; } = null!;
+
+    public virtual MOrderMaster OrderMaster { get; set; } = null!;
+
+    public virtual MPaymentStatus PaymentStatus { get; set; } = null!;
 }

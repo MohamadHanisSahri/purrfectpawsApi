@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PurrfectpawsApi.Models;
 
@@ -16,15 +16,10 @@ public partial class TCart
     public int UserId { get; set; }
 
     public int Quantity { get; set; }
-    //public IEnumerable<object> TCarts { get; internal set; }
-}
 
-public class TCartPostDto
-{
-    public int ProductId { get; set; }
+    public virtual TProduct Product { get; set; } = null!;
 
-    public int UserId { get; set; }
+    public virtual ICollection<TTransaction> TTransactions { get; set; } = new List<TTransaction>();
 
-    public int Quantity { get; set; }
-
+    public virtual TUser User { get; set; } = null!;
 }

@@ -38,7 +38,11 @@ public partial class PurrfectpawsContext : DbContext
 
     public virtual DbSet<TProduct> TProducts { get; set; }
 
+    public virtual DbSet<TProductBlobImage> TProductBlobImages { get; set; }
+
     public virtual DbSet<TProductDetail> TProductDetails { get; set; }
+
+    public virtual DbSet<TProductImage> TProductImages { get; set; }
 
     public virtual DbSet<TShippingAddress> TShippingAddresses { get; set; }
 
@@ -71,6 +75,11 @@ public partial class PurrfectpawsContext : DbContext
 
             entity.Property(e => e.OrderMasterId).HasColumnName("order_master_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.MOrderMasters)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_M_Order_Master_T_User");
         });
 
         modelBuilder.Entity<MOrderStatus>(entity =>
@@ -133,12 +142,16 @@ public partial class PurrfectpawsContext : DbContext
 
             entity.Property(e => e.BillingAddressId).HasColumnName("billing_address_id");
             entity.Property(e => e.City)
-                .HasMaxLength(50)
+                .HasMaxLength(150)
                 .IsUnicode(false)
                 .HasColumnName("city");
+            entity.Property(e => e.Country)
+                .HasMaxLength(150)
+                .IsUnicode(false)
+                .HasColumnName("country");
             entity.Property(e => e.Postcode).HasColumnName("postcode");
             entity.Property(e => e.State)
-                .HasMaxLength(50)
+                .HasMaxLength(150)
                 .IsUnicode(false)
                 .HasColumnName("state");
             entity.Property(e => e.Street1)
@@ -150,6 +163,11 @@ public partial class PurrfectpawsContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("street_2");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TBillingAddresses)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Billing_Address_T_User");
         });
 
         modelBuilder.Entity<TCart>(entity =>
@@ -162,11 +180,21 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.TCarts)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Cart_T_Product");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TCarts)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Cart_T_User");
         });
 
         modelBuilder.Entity<TLeadLength>(entity =>
         {
-            entity.HasKey(e => e.LeadLengthId).HasName("PK_T_Lead");
+            entity.HasKey(e => e.LeadLengthId);
 
             entity.ToTable("T_Lead_Length");
 
@@ -192,6 +220,30 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.TotalPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("total_price");
+
+            entity.HasOne(d => d.BillingAddress).WithMany(p => p.TOrders)
+                .HasForeignKey(d => d.BillingAddressId)
+                .HasConstraintName("FK_T_Order_T_Billing_Address");
+
+            entity.HasOne(d => d.OrderMaster).WithMany(p => p.TOrders)
+                .HasForeignKey(d => d.OrderMasterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Order_M_Order_Master");
+
+            entity.HasOne(d => d.OrderStatus).WithMany(p => p.TOrders)
+                .HasForeignKey(d => d.OrderStatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Order_M_Order_Status");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.TOrders)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Order_T_Product");
+
+            entity.HasOne(d => d.ShippingAddress).WithMany(p => p.TOrders)
+                .HasForeignKey(d => d.ShippingAddressId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Order_T_Shipping_Address");
         });
 
         modelBuilder.Entity<TProduct>(entity =>
@@ -204,8 +256,43 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.LeadLengthId).HasColumnName("lead_length_id");
             entity.Property(e => e.ProductDetailsId).HasColumnName("product_details_id");
             entity.Property(e => e.ProductQuantity).HasColumnName("product_quantity");
+            entity.Property(e => e.QuantitySold).HasColumnName("quantity_sold");
             entity.Property(e => e.SizeId).HasColumnName("size_id");
             entity.Property(e => e.VariationId).HasColumnName("variation_id");
+
+            entity.HasOne(d => d.LeadLength).WithMany(p => p.TProducts)
+                .HasForeignKey(d => d.LeadLengthId)
+                .HasConstraintName("FK_T_Product_T_Lead_Length");
+
+            entity.HasOne(d => d.ProductDetails).WithMany(p => p.TProducts)
+                .HasForeignKey(d => d.ProductDetailsId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Product_T_Product_Details");
+
+            entity.HasOne(d => d.Size).WithMany(p => p.TProducts)
+                .HasForeignKey(d => d.SizeId)
+                .HasConstraintName("FK_T_Product_M_Size");
+
+            entity.HasOne(d => d.Variation).WithMany(p => p.TProducts)
+                .HasForeignKey(d => d.VariationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Product_T_Variation");
+        });
+
+        modelBuilder.Entity<TProductBlobImage>(entity =>
+        {
+            entity.HasKey(e => e.ProductImageId);
+
+            entity.ToTable("T_Product_Blob_Images");
+
+            entity.Property(e => e.ProductImageId).HasColumnName("product_image_id");
+            entity.Property(e => e.BlobStorageId).HasColumnName("blob_storage_id");
+            entity.Property(e => e.ProductDetailsId).HasColumnName("product_details_id");
+
+            entity.HasOne(d => d.ProductDetails).WithMany(p => p.TProductBlobImages)
+                .HasForeignKey(d => d.ProductDetailsId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Product_Blob_Images_T_Product_Details");
         });
 
         modelBuilder.Entity<TProductDetail>(entity =>
@@ -236,6 +323,23 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.ProductRevenue)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("product_revenue");
+            entity.Property(e => e.QuantitySold).HasColumnName("quantity_sold");
+
+            entity.HasOne(d => d.Category).WithMany(p => p.TProductDetails)
+                .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Product_Details_M_Category");
+        });
+
+        modelBuilder.Entity<TProductImage>(entity =>
+        {
+            entity.HasKey(e => e.ImageId);
+
+            entity.ToTable("T_Product_Image");
+
+            entity.Property(e => e.ImageId).HasColumnName("image_id");
+            entity.Property(e => e.BlobStorageId).HasColumnName("blob_storage_id");
+            entity.Property(e => e.ProductDetailsId).HasColumnName("product_details_id");
         });
 
         modelBuilder.Entity<TShippingAddress>(entity =>
@@ -249,6 +353,10 @@ public partial class PurrfectpawsContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("city");
+            entity.Property(e => e.Country)
+                .HasMaxLength(150)
+                .IsUnicode(false)
+                .HasColumnName("country");
             entity.Property(e => e.Postcode).HasColumnName("postcode");
             entity.Property(e => e.State)
                 .HasMaxLength(50)
@@ -263,6 +371,11 @@ public partial class PurrfectpawsContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("street_2");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TShippingAddresses)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Shipping_Address_T_User");
         });
 
         modelBuilder.Entity<TTransaction>(entity =>
@@ -281,6 +394,21 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.TransactionDate)
                 .HasColumnType("datetime")
                 .HasColumnName("transaction_date");
+
+            entity.HasOne(d => d.Cart).WithMany(p => p.TTransactions)
+                .HasForeignKey(d => d.CartId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Transaction_T_Cart");
+
+            entity.HasOne(d => d.OrderMaster).WithMany(p => p.TTransactions)
+                .HasForeignKey(d => d.OrderMasterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Transaction_M_Order_Master");
+
+            entity.HasOne(d => d.PaymentStatus).WithMany(p => p.TTransactions)
+                .HasForeignKey(d => d.PaymentStatusId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_Transaction_M_Payment_Status");
         });
 
         modelBuilder.Entity<TUser>(entity =>
@@ -290,6 +418,7 @@ public partial class PurrfectpawsContext : DbContext
             entity.ToTable("T_User");
 
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AccessToken).HasColumnName("access_token");
             entity.Property(e => e.Email)
                 .HasMaxLength(150)
                 .IsUnicode(false)
@@ -300,8 +429,11 @@ public partial class PurrfectpawsContext : DbContext
                 .HasColumnName("name");
             entity.Property(e => e.Password).HasColumnName("password");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
-            entity.HasMany(u => u.ShippingAddresses).WithOne(a => a.User).HasForeignKey(a => a.UserId);
-            entity.HasMany(u => u.BillingAddresses).WithOne(a => a.User).HasForeignKey(a => a.UserId);
+
+            entity.HasOne(d => d.Role).WithMany(p => p.TUsers)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_T_User_M_Role");
         });
 
         modelBuilder.Entity<TVariation>(entity =>

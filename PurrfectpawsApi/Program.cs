@@ -4,25 +4,14 @@ using Microsoft.IdentityModel.Tokens;
 using PurrfectpawsApi.DatabaseDbContext;
 using System.Text;
 
-var MyAlloSpecificationOrigins = "_myAllowSpecificationOrigins";
-
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy(MyAlloSpecificationOrigins,
-        policy =>
-        {
-            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-        });
-});
 
 // Add services to the container.
 
 builder.Services.AddControllers();
 builder.Services.AddDbContext<PurrfectpawsContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnString"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("PurrfectpawsConnString"));
 });
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
@@ -41,6 +30,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//TODO : cross origin (need to change later on)
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -52,12 +52,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors(MyAlloSpecificationOrigins);
-
 app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseCors();
 
 app.Run();

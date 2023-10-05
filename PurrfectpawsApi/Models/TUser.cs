@@ -17,12 +17,18 @@ public partial class TUser
     public string Email { get; set; } = null!;
 
     public string Password { get; set; } = null!;
-    public string? Access_Token { get; set; }
+
+    public string? AccessToken { get; set; }
     [ForeignKey("RoleId")]
     public MRole Role { get; set; }
-    public List<TShippingAddress> ShippingAddresses { get; set; }
-    public List<TBillingAddress> BillingAddresses { get; set; }
-    public List<TCart> TCarts { get; set; }
+
+    public virtual ICollection<MOrderMaster> MOrderMasters { get; set; } = new List<MOrderMaster>();
+
+    public virtual ICollection<TBillingAddress> TBillingAddresses { get; set; } = new List<TBillingAddress>();
+
+    public virtual ICollection<TCart> TCarts { get; set; } = new List<TCart>();
+
+    public virtual ICollection<TShippingAddress> TShippingAddresses { get; set; } = new List<TShippingAddress>();
 }
 
 public partial class TUserGetsDTO
@@ -81,8 +87,15 @@ public class TUserLogin
 {
     public string email { get; set; }
 
-    public string password { get; set; }
+    public string Password { get; set; }
 
+}
+
+public class TUserPasswordPutDto
+{
+    public string oldPassword { get; set; }
+
+    public string newPassword { get; set; }
 }
 
 //public class TUserGetAllDTO

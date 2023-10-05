@@ -13,13 +13,17 @@ public partial class TBillingAddress
     public int UserId { get; set; }
     [ForeignKey("UserId")]
     public TUser User { get; set; } = null!;
-    public string Street1 { get; set; } = null!;
+    public string? Street1 { get; set; } = null!;
 
     public string? Street2 { get; set; }
 
-    public string City { get; set; } = null!;
+    public string? City { get; set; } = null!;
 
-    public string State { get; set; } = null!;
+    public string? State { get; set; } = null!;
 
     public int? Postcode { get; set; }
+
+    public string? Country { get; set; }
+
+    public virtual ICollection<TOrder> TOrders { get; set; } = new List<TOrder>();
 }

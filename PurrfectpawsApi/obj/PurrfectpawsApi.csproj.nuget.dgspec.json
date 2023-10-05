@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\m.bin.mohd.sahri\\source\\repos\\Backend\\PurrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj": {}
+    "C:\\Users\\m.bin.mohd.sahri\\Documents\\academy_project\\personal_repo\\New folder\\purrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj": {}
   },
   "projects": {
-    "C:\\Users\\m.bin.mohd.sahri\\source\\repos\\Backend\\PurrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj": {
+    "C:\\Users\\m.bin.mohd.sahri\\Documents\\academy_project\\personal_repo\\New folder\\purrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\m.bin.mohd.sahri\\source\\repos\\Backend\\PurrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj",
+        "projectUniqueName": "C:\\Users\\m.bin.mohd.sahri\\Documents\\academy_project\\personal_repo\\New folder\\purrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj",
         "projectName": "PurrfectpawsApi",
-        "projectPath": "C:\\Users\\m.bin.mohd.sahri\\source\\repos\\Backend\\PurrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj",
+        "projectPath": "C:\\Users\\m.bin.mohd.sahri\\Documents\\academy_project\\personal_repo\\New folder\\purrfectpawsApi\\PurrfectpawsApi\\PurrfectpawsApi.csproj",
         "packagesPath": "C:\\Users\\m.bin.mohd.sahri\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\m.bin.mohd.sahri\\source\\repos\\Backend\\PurrfectpawsApi\\PurrfectpawsApi\\obj\\",
+        "outputPath": "C:\\Users\\m.bin.mohd.sahri\\Documents\\academy_project\\personal_repo\\New folder\\purrfectpawsApi\\PurrfectpawsApi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\m.bin.mohd.sahri\\AppData\\Roaming\\NuGet\\NuGet.Config",

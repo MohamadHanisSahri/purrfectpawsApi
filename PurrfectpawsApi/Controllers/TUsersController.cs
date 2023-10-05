@@ -1,20 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Threading.Tasks;
-using BCrypt.Net;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PurrfectpawsApi.Models;
-using Microsoft.AspNetCore.Authorization;
 using PurrfectpawsApi.DatabaseDbContext;
 
 namespace PurrfectpawsApi.Controllers
 {
-    
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class TUsersController : ControllerBase
@@ -26,7 +19,6 @@ namespace PurrfectpawsApi.Controllers
             _context = context;
         }
 
-        [Authorize]
         // GET: api/TUsers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TUser>>> GetTUsers()
@@ -43,8 +35,8 @@ namespace PurrfectpawsApi.Controllers
 
             var usersWithAddresses = await _context.TUsers
                 .Include(u => u.Role)
-                .Include(u => u.ShippingAddresses)
-                .Include(u => u.BillingAddresses)
+                .Include(u => u.TShippingAddresses)
+                .Include(u => u.TBillingAddresses)
                 .ToListAsync();
 
             if (usersWithAddresses == null || usersWithAddresses.Count == 0)
@@ -58,7 +50,7 @@ namespace PurrfectpawsApi.Controllers
                 Role = user.Role?.RoleName ?? "",
                 Name = user.Name,
                 Email = user.Email,
-                ShippingAddress = (List<TShippingAddress>)user.ShippingAddresses.Select(sa => new TShippingAddress
+                ShippingAddress = (List<TShippingAddress>)user.TShippingAddresses.Select(sa => new TShippingAddress
                 {
                     ShippingAddressId = sa.ShippingAddressId,
                     UserId = sa.UserId,
@@ -68,7 +60,7 @@ namespace PurrfectpawsApi.Controllers
                     State = sa.State,
                     Postcode = sa.Postcode
                 }).ToList(),
-                BillingAddresses = (List<TBillingAddress>)user.BillingAddresses.Select(ba => new TBillingAddress
+                BillingAddresses = (List<TBillingAddress>)user.TBillingAddresses.Select(ba => new TBillingAddress
                 {
                     BillingAddressId = ba.BillingAddressId,
                     UserId = ba.UserId,
@@ -86,10 +78,9 @@ namespace PurrfectpawsApi.Controllers
             return Content(jsonString, "application/json");
         }
 
-        [Authorize]
         // GET: api/TUsers/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TUser>> GetTUser(int id)
+        public async Task<ActionResult<TUserGetsDTO>> GetTUser(int id)
         {
           if (_context.TUsers == null)
           {
@@ -103,8 +94,8 @@ namespace PurrfectpawsApi.Controllers
 
             var user = await _context.TUsers
                 .Include(u => u.Role)
-                .Include(u => u.ShippingAddresses)
-                .Include(u => u.BillingAddresses)
+                .Include(u => u.TShippingAddresses)
+                .Include(u => u.TBillingAddresses)
                 .FirstOrDefaultAsync(u => u.UserId == id);
 
             if (user == null)
@@ -118,7 +109,7 @@ namespace PurrfectpawsApi.Controllers
                 Role = user.Role?.RoleName ?? "",
                 Name = user.Name,
                 Email = user.Email,
-                ShippingAddress = user.ShippingAddresses.Select(sa => new TShippingAddress
+                ShippingAddress = user.TShippingAddresses.Select(sa => new TShippingAddress
                 {
                     ShippingAddressId = sa.ShippingAddressId,
                     UserId = sa.UserId,
@@ -128,7 +119,7 @@ namespace PurrfectpawsApi.Controllers
                     State = sa.State,
                     Postcode = sa.Postcode
                 }).ToList(),
-                BillingAddresses = user.BillingAddresses.Select(ba => new TBillingAddress
+                BillingAddresses = user.TBillingAddresses.Select(ba => new TBillingAddress
                 {
                     BillingAddressId = ba.BillingAddressId,
                     UserId = ba.UserId,
@@ -141,12 +132,12 @@ namespace PurrfectpawsApi.Controllers
             };
 
             // Serialize the result using the specified options
-            var jsonString = JsonSerializer.Serialize(result, options);
+            //  var jsonString = JsonSerializer.Serialize(result, options);
 
-            return Content(jsonString, "application/json");
+            //  return Content(jsonString, "application/json");
+            return result;
         }
 
-        [Authorize]
         // PUT: api/TUsers/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -163,9 +154,12 @@ namespace PurrfectpawsApi.Controllers
                     return NotFound("User not found");
                 }
 
+
                 //_context.Entry(tUser).State = EntityState.Modified;
                 user.Name = tUserPutDto.name;
                 user.Email = tUserPutDto.email;
+
+
                 if (shippingAddress != null)
                 {
                     shippingAddress.Street1 = tUserPutDto.street_1;
@@ -215,7 +209,7 @@ namespace PurrfectpawsApi.Controllers
 
         // POST: api/TUsers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost("Register")]
+        [HttpPost]
         public async Task<ActionResult<TUser>> PostTUser([FromBody] TUserDTO tUserDTO)
         {
           if (_context.TUsers == null)
@@ -232,7 +226,21 @@ namespace PurrfectpawsApi.Controllers
             {
                 return NotFound("Role not found!");
             }
+
+            if (TUserEmailExists(tUserDTO.email))
+            {
+                var response = new
+                {
+                    field = "email",
+                    status = "error",
+                    message = "Email already exists. Please use a different email."
+                };
+
+                return Conflict(response);
+            }
+
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(tUserDTO.password);
+
             var tUser = new TUser
             {
                 RoleId = roleId.RoleId,
@@ -289,7 +297,6 @@ namespace PurrfectpawsApi.Controllers
             //return CreatedAtAction("GetTUser", new { id = tUser.UserId }, tUser);
         }
 
-        [Authorize]
         // DELETE: api/TUsers/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTUser(int id)
@@ -313,9 +320,50 @@ namespace PurrfectpawsApi.Controllers
             return NoContent();
         }
 
+
+
+        [HttpPut("changePassword/{id}")]
+        public async Task<ActionResult> ChangePassword(int id, TUserPasswordPutDto TUserPasswordPutDto)
+        {
+            var user = await _context.TUsers.FirstOrDefaultAsync(u => u.UserId == id);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            // Verify the old password against the hashed password
+
+            if (BCrypt.Net.BCrypt.Verify(TUserPasswordPutDto.oldPassword, user.Password))
+            {
+                // The old password matches, update the password
+                string hashedNewPassword = BCrypt.Net.BCrypt.HashPassword(TUserPasswordPutDto.newPassword);
+                user.Password = hashedNewPassword;
+
+                await _context.SaveChangesAsync();
+
+                return Ok("Password updated successfully");
+            }
+            else
+            {
+                return BadRequest("Old password is not same");
+            }
+
+
+        }
+
         private bool TUserExists(int id)
         {
             return (_context.TUsers?.Any(e => e.UserId == id)).GetValueOrDefault();
         }
+
+        private bool TUserEmailExists(string userEmail)
+        {
+            var userEmails = _context.TUsers.Select(t => t.Email).ToList();
+            var emailExists = userEmails.Any(email => string.Equals(email, userEmail, StringComparison.OrdinalIgnoreCase));
+
+            return emailExists;
+
+        }
+
     }
 }

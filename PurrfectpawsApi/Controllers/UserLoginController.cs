@@ -24,7 +24,7 @@ namespace PurrfectpawsApi.Controllers
             _context = context;
         }
 
-        // GET: api/UserLogin/Login
+        // GET: api/TUsers/Login
         [HttpPost("Login")]
         public async Task<ActionResult<TUserLogin>> PostUserLogin([FromBody] TUserLogin login)
         {
@@ -38,7 +38,7 @@ namespace PurrfectpawsApi.Controllers
                 return NotFound("Invalid user");
             }
 
-            if (BCrypt.Net.BCrypt.Verify(login.password, isUserExist.Password))
+            if (BCrypt.Net.BCrypt.Verify(login.Password, isUserExist.Password))
             {
                 var claims = new[]
                 {
@@ -59,7 +59,7 @@ namespace PurrfectpawsApi.Controllers
                     expires: DateTime.UtcNow.AddHours(1),
                     signingCredentials: signIn);
                 var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-                isUserExist.Access_Token = accessToken;
+                isUserExist.AccessToken = accessToken;
                 await _context.SaveChangesAsync();
 
                 return Ok(accessToken);
@@ -69,6 +69,23 @@ namespace PurrfectpawsApi.Controllers
                 return BadRequest("Invalid credentials");
             }
 
+        }
+
+        // DELETE: api/TUsers/Logout/5
+        [HttpDelete("Logout/{id}")]
+        public async Task<IActionResult> DeleteTUserToken(int id)
+        {
+            var tUser = await _context.TUsers.FindAsync(id);
+            if (tUser == null)
+            {
+                return NotFound();
+            }
+
+            tUser.AccessToken = null;
+            
+            await _context.SaveChangesAsync();
+
+            return Ok("Token is deleted");
         }
     }
 }
