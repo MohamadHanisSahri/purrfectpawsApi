@@ -38,6 +38,11 @@ namespace PurrfectpawsApi.Controllers
                 return NotFound("Invalid user");
             }
 
+            var roleName = _context.MRoles
+                            .Where(r => r.RoleId == isUserExist.RoleId)
+                            .Select(r => r.RoleName)
+                            .FirstOrDefault();
+
             if (BCrypt.Net.BCrypt.Verify(login.Password, isUserExist.Password))
             {
                 var claims = new[]
@@ -47,7 +52,9 @@ namespace PurrfectpawsApi.Controllers
                     new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()),
                     new Claim("UserId", isUserExist.UserId.ToString()),
                     new Claim("UserName", isUserExist.Name),
-                    new Claim("Email", isUserExist.Email)
+                    new Claim("Email", isUserExist.Email),
+                    new Claim("RoleName", roleName)
+
                 };
 
                 var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));

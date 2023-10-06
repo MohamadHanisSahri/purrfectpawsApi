@@ -32,26 +32,70 @@ namespace PurrfectpawsApi.Controllers
               return NotFound();
           }
 
-            var productList = await _context.TProductDetails
-                  .Include(p => p.TProductBlobImages)
-                  .Include(p => p.Category)
+            var productList = await _context.TProducts
+                  .Include(p => p.ProductDetails)
+                  .ThenInclude(p => p.TProductBlobImages)
+                  .Include(p => p.ProductDetails)
+                  .ThenInclude(p => p.Category)
                   .Select(p => new TProductsDto
                   {
+                      ProductId = p.ProductId,
                       ProductDetailsId = p.ProductDetailsId,
-                      ProductName = p.ProductName,
-                      ProductDescription = p.ProductDescription,
-                      ProductPrice = p.ProductPrice,
-                      ProductCategoryId = p.Category.CategoryId,
-                      ProductCategory = p.Category.Category,
-                      ProductImages = p.TProductBlobImages
+                      ProductName = p.ProductDetails.ProductName,
+                      ProductDescription = p.ProductDetails.ProductDescription,
+                      ProductPrice = p.ProductDetails.ProductPrice,
+                      ProductCategoryId = p.ProductDetails.Category.CategoryId,
+                      ProductCategory = p.ProductDetails.Category.Category,
+                      ProductImages = p.ProductDetails.TProductBlobImages
                           .Select(i => new TProductImagesDto
                           {
                               ImagesId = i.ProductImageId,
-                              BlobImageUrl = "https://storagepurrfectpaws.blob.core.windows.net/storagecontainerpurrfectpaws/"+i.BlobStorageId
+                              BlobImageUrl = "https://storagepurrfectpaws.blob.core.windows.net/storagecontainerpurrfectpaws/" + i.BlobStorageId
                           })
                           .ToList()
 
                   })
+                .ToListAsync();
+
+            return Ok(productList);
+        }
+
+        // GET: api/TProducts
+        [HttpGet("Pagination/{pageNumber}/{itemsPerpage}")]
+        public async Task<ActionResult<IEnumerable<TProductsDto>>> GetTProductsPagination(int pageNumber, int itemsPerPage)
+        {
+            if (_context.TProducts == null)
+            {
+                return NotFound();
+            }
+
+            int recordsToSkip = (pageNumber - 1) * itemsPerPage;
+
+            var productList = await _context.TProducts
+                  .Include(p => p.ProductDetails)
+                  .ThenInclude(p => p.TProductBlobImages)
+                  .Include(p => p.ProductDetails)
+                  .ThenInclude(p => p.Category)
+                  .Select(p => new TProductsDto
+                  {
+                      ProductId = p.ProductId,
+                      ProductDetailsId = p.ProductDetailsId,
+                      ProductName = p.ProductDetails.ProductName,
+                      ProductDescription = p.ProductDetails.ProductDescription,
+                      ProductPrice = p.ProductDetails.ProductPrice,
+                      ProductCategoryId = p.ProductDetails.Category.CategoryId,
+                      ProductCategory = p.ProductDetails.Category.Category,
+                      ProductImages = p.ProductDetails.TProductBlobImages
+                          .Select(i => new TProductImagesDto
+                          {
+                              ImagesId = i.ProductImageId,
+                              BlobImageUrl = "https://storagepurrfectpaws.blob.core.windows.net/storagecontainerpurrfectpaws/" + i.BlobStorageId
+                          })
+                          .ToList()
+
+                  })
+                  .Skip(recordsToSkip)
+                  .Take(itemsPerPage)
                 .ToListAsync();
 
             return Ok(productList);

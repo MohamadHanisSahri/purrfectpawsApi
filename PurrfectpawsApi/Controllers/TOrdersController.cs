@@ -1,7 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol;
 using PurrfectpawsApi.DatabaseDbContext;
 using PurrfectpawsApi.Models;
+using System.Drawing;
 
 namespace PurrfectpawsApi.Controllers
 {

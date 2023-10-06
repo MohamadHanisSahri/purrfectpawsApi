@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +15,12 @@ namespace PurrfectpawsApi.Controllers
     [ApiController]
     public class TProductDetailsController : ControllerBase
     {
+        public IConfiguration _configuration;
         private readonly PurrfectpawsContext _context;
 
-        public TProductDetailsController(PurrfectpawsContext context)
+        public TProductDetailsController(IConfiguration config, PurrfectpawsContext context)
         {
+            _configuration = config;
             _context = context;
         }
 
@@ -195,18 +198,64 @@ namespace PurrfectpawsApi.Controllers
         // PUT: api/TProductDetails/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTProductDetail(int id, TProductDetail tProductDetail)
+        public async Task<IActionResult> PutTProductDetail(int id, [FromForm] TPutProductDetail tProductDetail)
         {
-            if (id != tProductDetail.ProductDetailsId)
+            var existingProductDetail = await _context.TProductDetails.FindAsync(id);
+            if (existingProductDetail == null)
             {
-                return BadRequest();
+                return NotFound(); // Return 404 if the entity with the given 'id' is not found
             }
 
-            _context.Entry(tProductDetail).State = EntityState.Modified;
+            existingProductDetail.CategoryId = tProductDetail.CategoryId;
+            existingProductDetail.ProductName = tProductDetail.ProductName;
+            existingProductDetail.ProductDescription = tProductDetail.ProductDescription;
+            existingProductDetail.ProductPrice = tProductDetail.ProductPrice;
+            existingProductDetail.ProductCost = tProductDetail.ProductCost;
+            existingProductDetail.ProductRevenue = tProductDetail.ProductRevenue;
+            existingProductDetail.ProductProfit = tProductDetail.ProductProfit;
+            existingProductDetail.QuantitySold = tProductDetail.QuantitySold;
+
+            if (tProductDetail.Images != null && tProductDetail.Images.Count > 0)
+            {
+                string connectionString = _configuration.GetConnectionString("PurrfectpawsBlobStorageConnString");
+                BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+
+                foreach (var image in tProductDetail.Images)
+                {
+                    if (image.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    var containerName = "storagecontainerpurrfectpaws";
+                    var filename = Guid.NewGuid() + Path.GetExtension(image.FileName);
+
+                    BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+                    BlobClient blobClient = containerClient.GetBlobClient(filename);
+
+                    using (var stream = image.OpenReadStream())
+                    {
+                        await blobClient.UploadAsync(stream, true);
+                    }
+
+                    var productBlobImage = new TProductBlobImage
+                    {
+                        ProductDetailsId = existingProductDetail.ProductDetailsId,
+                        BlobStorageId = filename
+                    };
+
+                    _context.TProductBlobImages.Add(productBlobImage);
+                }
+            }
+
+            // _context.Entry(tProductDetail).State = EntityState.Modified;
 
             try
             {
                 await _context.SaveChangesAsync();
+
+                return Ok("success");
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -220,23 +269,94 @@ namespace PurrfectpawsApi.Controllers
                 }
             }
 
-            return NoContent();
+            //return NoContent();
         }
 
+
+
+
         // POST: api/TProductDetails
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TProductDetail>> PostTProductDetail(TProductDetail tProductDetail)
+        public async Task<ActionResult<TPostProductDetail>> PostTProductDetail([FromForm] TPostProductDetail TPostProductDetail)
         {
           if (_context.TProductDetails == null)
           {
               return Problem("Entity set 'PurrfectpawsContext.TProductDetails'  is null.");
           }
-            _context.TProductDetails.Add(tProductDetail);
+
+            var newProductDetail = new TProductDetail
+            {
+                CategoryId = TPostProductDetail.CategoryId,
+                ProductName = TPostProductDetail.ProductName,
+                ProductDescription = TPostProductDetail.ProductDescription,
+                ProductPrice = TPostProductDetail.ProductPrice,
+                ProductCost = TPostProductDetail.ProductCost,
+                ProductRevenue = TPostProductDetail.ProductRevenue,
+                ProductProfit = TPostProductDetail.ProductProfit,
+                QuantitySold = TPostProductDetail.QuantitySold
+            };
+
+            // newProductDetail.TProductBlobImages = tProductDetail.TProductBlobImages;
+
+            _context.TProductDetails.Add(newProductDetail);
+
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTProductDetail", new { id = tProductDetail.ProductDetailsId }, tProductDetail);
+            if (TPostProductDetail.Images != null && TPostProductDetail.Images.Count > 0)
+            {
+                var uploadedFileNames = new List<string>();
+                var imageUrls = new List<string>();
+
+                string connectionString = _configuration.GetConnectionString("PurrfectpawsBlobStorageConnString");
+                BlobServiceClient blobServiceClient = new BlobServiceClient(connectionString);
+
+                foreach (var image in TPostProductDetail.Images)
+                {
+                    if (image.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    var containerName = "storagecontainerpurrfectpaws";
+                    var filename = Guid.NewGuid() + Path.GetExtension(image.FileName);
+
+                    BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+
+                    BlobClient blobClient = containerClient.GetBlobClient(filename);
+
+                    using (var stream = image.OpenReadStream())
+                    {
+                        await blobClient.UploadAsync(stream, true);
+                    }
+
+                    uploadedFileNames.Add(filename);
+
+                    var imageUrl = $"{blobClient.Uri}";
+                    imageUrls.Add(imageUrl);
+
+                    var productBlobImage = new TProductBlobImage
+                    {
+                        ProductDetailsId = newProductDetail.ProductDetailsId,
+                        BlobStorageId = filename
+                    };
+
+                    _context.TProductBlobImages.Add(productBlobImage);
+                    await _context.SaveChangesAsync();
+
+
+                }
+
+            }
+
+
+            //return CreatedAtAction("GetTProductDetail", new { id = tProductDetail.ProductDetailsId }, tProductDetail);
+
+            return Ok("success");
         }
+
+
+
+
 
         // DELETE: api/TProductDetails/5
         [HttpDelete("{id}")]
