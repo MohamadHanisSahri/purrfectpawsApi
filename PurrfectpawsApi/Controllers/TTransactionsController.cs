@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using PurrfectpawsApi.DatabaseDbContext;
 using PurrfectpawsApi.Models;
-using static NuGet.Packaging.PackagingConstants;
 
 namespace PurrfectpawsApi.Controllers
 {

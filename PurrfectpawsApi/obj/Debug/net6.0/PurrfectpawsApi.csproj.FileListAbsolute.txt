@@ -180,3 +180,7 @@ C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\pur
 C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\purrfectpawsApi\PurrfectpawsApi\obj\Debug\net6.0\PurrfectpawsApi.csproj.CopyComplete
 C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\purrfectpawsApi\PurrfectpawsApi\obj\Debug\net6.0\PurrfectpawsApi.genruntimeconfig.cache
 C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\purrfectpawsApi\PurrfectpawsApi\obj\Debug\net6.0\ref\PurrfectpawsApi.dll
+C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\purrfectpawsApi\PurrfectpawsApi\bin\Debug\net6.0\Azure.Storage.Blobs.dll
+C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\purrfectpawsApi\PurrfectpawsApi\bin\Debug\net6.0\Azure.Storage.Common.dll
+C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\purrfectpawsApi\PurrfectpawsApi\bin\Debug\net6.0\System.Diagnostics.DiagnosticSource.dll
+C:\Users\m.bin.mohd.sahri\Documents\academy_project\personal_repo\New folder\purrfectpawsApi\PurrfectpawsApi\bin\Debug\net6.0\System.IO.Hashing.dll

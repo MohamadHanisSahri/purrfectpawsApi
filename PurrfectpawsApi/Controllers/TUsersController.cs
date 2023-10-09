@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Threading.Tasks;
-using BCrypt.Net;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PurrfectpawsApi.Models;
-using Microsoft.AspNetCore.Authorization;
 using PurrfectpawsApi.DatabaseDbContext;
-using NuGet.Protocol.Plugins;
 
 namespace PurrfectpawsApi.Controllers
 {
