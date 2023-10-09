@@ -46,6 +46,10 @@ namespace PurrfectpawsApi.Controllers
                       ProductPrice = p.ProductDetails.ProductPrice,
                       ProductCategoryId = p.ProductDetails.Category.CategoryId,
                       ProductCategory = p.ProductDetails.Category.Category,
+                      ProductVariation = p.Variation.VariationName,
+                      ProductSize = p.Size.SizeLabel,
+                      ProductLength = p.LeadLength.LeadLength,
+                      StockQuantity = p.ProductQuantity,
                       ProductImages = p.ProductDetails.TProductBlobImages
                           .Select(i => new TProductImagesDto
                           {
@@ -69,6 +73,11 @@ namespace PurrfectpawsApi.Controllers
                 return NotFound();
             }
 
+            if (pageNumber == null || itemsPerPage == null)
+            {
+                return BadRequest("Page number or items per page are not provided");
+            }
+
             int recordsToSkip = (pageNumber - 1) * itemsPerPage;
 
             var productList = await _context.TProducts
@@ -85,6 +94,10 @@ namespace PurrfectpawsApi.Controllers
                       ProductPrice = p.ProductDetails.ProductPrice,
                       ProductCategoryId = p.ProductDetails.Category.CategoryId,
                       ProductCategory = p.ProductDetails.Category.Category,
+                      ProductVariation = p.Variation.VariationName,
+                      ProductSize = p.Size.SizeLabel,
+                      ProductLength = p.LeadLength.LeadLength,
+                      StockQuantity = p.ProductQuantity,
                       ProductImages = p.ProductDetails.TProductBlobImages
                           .Select(i => new TProductImagesDto
                           {

@@ -258,7 +258,6 @@ namespace PurrfectpawsApi.Controllers
         }
 
         // POST: api/TOrders
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
         public async Task<ActionResult<TPostOrderDTO>> PostTOrder(TPostOrderDTO tOrderDTO)
         {
@@ -269,22 +268,37 @@ namespace PurrfectpawsApi.Controllers
 
 
             //### Calculation in cart
+            var productDetails = await _context.TProducts.
+                            Where(p => p.ProductId == tOrderDTO.ProductId).
+                            Select(p => new
+                            {
+                                p.ProductDetails.ProductPrice
+                            }).
+                            FirstOrDefaultAsync();
 
-            //var productDetails = await _context.TProducts.
-            //                Where(p => p.ProductId == tOrderDTO.ProductId).
-            //                Select(p => new
-            //                {
-            //                    p.ProductDetails.ProductPrice
-            //                }).
-            //                FirstOrDefaultAsync();
+            if (productDetails == null) return Problem("Product not found");
 
-            //if (productDetails == null) return Problem("Product not found");
+            //check price total
+            var productTotal = productDetails.ProductPrice * tOrderDTO.Quantity;
+            if(productTotal != tOrderDTO.TotalPrice) { return Problem("Total price not same"); }
 
 
             var existingProduct = await _context.TProducts.FindAsync(tOrderDTO.ProductId);
 
 
             if (existingProduct == null) return NotFound("Product not found");
+
+            //check & reduce quantity
+            if(tOrderDTO.Quantity > existingProduct.ProductQuantity)
+            {
+                return Problem("Product quantity exceed from available stocks");
+            }
+            else
+            {
+                existingProduct.ProductQuantity = existingProduct.ProductQuantity - tOrderDTO.Quantity;
+
+            }
+
 
             var orderMasterId = await CreateMasterOrder(tOrderDTO.UserId);
 
@@ -303,9 +317,21 @@ namespace PurrfectpawsApi.Controllers
 
             _context.TOrders.Add(tOrder);
 
+            //add transaction
+            CreateTransaction(tOrderDTO.PaymentStatusId , orderMasterId , tOrderDTO.TotalPrice );
+
+            //delete item from cart
+            var removeCartItem = await _context.TCarts.FindAsync(tOrderDTO.CartId);
+            if (removeCartItem == null)
+            {
+                return NotFound();
+            }
+            
+            _context.TCarts.Remove(removeCartItem);
+
+
             await _context.SaveChangesAsync();
 
-            //return CreatedAtAction("GetTOrder", new { id = tOrder.OrderId }, tOrder);
 
             return Ok("Order created successfully");
 
@@ -348,6 +374,24 @@ namespace PurrfectpawsApi.Controllers
             return OrderMaster.OrderMasterId;
 
         }
+
+
+        private async void CreateTransaction( int paymentStatusId = 1, int orderMasterId = 1, decimal amount = 0 )
+        {
+
+            var TTransaction = new TTransaction
+            {
+                PaymentStatusId = paymentStatusId,
+                OrderMasterId = orderMasterId,
+                TransactionDate = DateTime.Now,
+                TransactionAmount = amount
+                
+            };
+
+             _context.TTransactions.Add(TTransaction);
+
+        }
+
 
         private async Task<decimal> GetProductPrice(int productId)
         {

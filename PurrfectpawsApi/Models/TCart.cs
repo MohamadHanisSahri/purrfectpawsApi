@@ -19,7 +19,7 @@ public partial class TCart
 
     public virtual TProduct Product { get; set; } = null!;
 
-    public virtual ICollection<TTransaction> TTransactions { get; set; } = new List<TTransaction>();
+   // public virtual ICollection<TTransaction> TTransactions { get; set; } = new List<TTransaction>();
 
     public virtual TUser User { get; set; } = null!;
 }

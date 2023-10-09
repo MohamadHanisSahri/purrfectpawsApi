@@ -17,6 +17,10 @@ public partial class TProductsDto
     public decimal ProductPrice { get; set; }
     public int ProductCategoryId { get; set; }
     public string ProductCategory { get; set; }
+    public int StockQuantity { get; set; }
+    public string ProductVariation { get; set; }
+    public string? ProductSize { get; set; }
+    public decimal? ProductLength { get; set; }
     public List<TProductImagesDto> ProductImages { get; set; }
 
 }

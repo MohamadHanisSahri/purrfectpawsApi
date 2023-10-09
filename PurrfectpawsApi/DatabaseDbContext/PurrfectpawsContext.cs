@@ -385,7 +385,6 @@ public partial class PurrfectpawsContext : DbContext
             entity.ToTable("T_Transaction");
 
             entity.Property(e => e.TransactionId).HasColumnName("transaction_id");
-            entity.Property(e => e.CartId).HasColumnName("cart_id");
             entity.Property(e => e.OrderMasterId).HasColumnName("order_master_id");
             entity.Property(e => e.PaymentStatusId).HasColumnName("payment_status_id");
             entity.Property(e => e.TransactionAmount)
@@ -394,11 +393,6 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.TransactionDate)
                 .HasColumnType("datetime")
                 .HasColumnName("transaction_date");
-
-            entity.HasOne(d => d.Cart).WithMany(p => p.TTransactions)
-                .HasForeignKey(d => d.CartId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_T_Transaction_T_Cart");
 
             entity.HasOne(d => d.OrderMaster).WithMany(p => p.TTransactions)
                 .HasForeignKey(d => d.OrderMasterId)
