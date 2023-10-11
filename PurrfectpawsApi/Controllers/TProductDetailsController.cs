@@ -355,9 +355,6 @@ namespace PurrfectpawsApi.Controllers
         }
 
 
-
-
-
         // DELETE: api/TProductDetails/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTProductDetail(int id)
@@ -372,7 +369,21 @@ namespace PurrfectpawsApi.Controllers
                 return NotFound();
             }
 
+            var tProduct = _context.TProducts.Where(c => c.ProductDetailsId == id).ToList();
+
+            if (tProduct != null)
+            {
+                foreach (var product in tProduct)
+                {
+                    var TProduct = await _context.TProducts.FindAsync(product.ProductId);
+
+                    _context.TProducts.Remove(TProduct);
+
+                }
+            }
+
             _context.TProductDetails.Remove(tProductDetail);
+
             await _context.SaveChangesAsync();
 
             return NoContent();

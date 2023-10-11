@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PurrfectpawsApi.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -7,7 +8,7 @@ using System.Text.Json.Serialization;
 
 namespace PurrfectpawsApi.Models;
 
-public partial class TProduct
+public partial class TProduct : ISoftDelete
 {
     [Key]
     public int ProductId { get; set; }
@@ -36,6 +37,9 @@ public partial class TProduct
     public virtual ICollection<TOrder> TOrders { get; set; } = new List<TOrder>();
 
     public virtual TVariation Variation { get; set; } = null!;
+
+    public bool IsDeleted { get; set; }
+
 }
 
 

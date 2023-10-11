@@ -149,18 +149,19 @@ public partial class TPostOrderDTO
 
     public int OrderStatusId { get; set; }
 
-    public int ProductId { get; set; }
+   // public int ProductId { get; set; }
 
     public int ShippingAddressId { get; set; }
 
     public int BillingAddressId { get; set; }
 
-    public int Quantity { get; set; }
+    //public int Quantity { get; set; }
 
     public decimal TotalPrice { get; set; }
 
     public int UserId { get; set; }
     public int PaymentStatusId { get; set; }
-    public int CartId { get; set; }
+    //public int CartId { get; set; }
+    public decimal ShippingFee { get; set; }
 
 }

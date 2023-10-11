@@ -36,6 +36,7 @@ namespace PurrfectpawsApi.Controllers
           var transactions = await _context.TTransactions.
                 Select( t => new GetTTransaction
                 {
+                    TransactionId = t.TransactionId,
                     PaymentStatusId = t.PaymentStatusId,
                     OrderMasterId = t.OrderMasterId,
                     TransactionDate = t.TransactionDate,

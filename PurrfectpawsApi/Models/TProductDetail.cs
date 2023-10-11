@@ -1,10 +1,11 @@
-﻿using System;
+﻿using PurrfectpawsApi.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace PurrfectpawsApi.Models;
 
-public partial class TProductDetail
+public partial class TProductDetail : ISoftDelete
 {
     [Key]
     public int ProductDetailsId { get; set; }
@@ -30,6 +31,8 @@ public partial class TProductDetail
     public virtual ICollection<TProductBlobImage> TProductBlobImages { get; set; } = new List<TProductBlobImage>();
 
     public virtual ICollection<TProduct> TProducts { get; set; } = new List<TProduct>();
+
+    public bool IsDeleted { get; set; }
 }
 
 public partial class TPostProductDetail

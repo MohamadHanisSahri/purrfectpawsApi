@@ -209,51 +209,24 @@ namespace PurrfectpawsApi.Controllers
         }
 
         // PUT: api/TOrders/5
-        [HttpPut("{id}")]
+        [HttpPut("{id}/{orderStatusId}")]
 
-        public async Task<IActionResult> PutTOrder(int id, [Bind("OrderStatusId , Quantity , ShippingAddressId , BillingAddressId")] TPutOrderDTO tPutOrderDTO)
+        public async Task<IActionResult> PutTOrder(int id, int orderStatusId)
         {
-            if (id != tPutOrderDTO.OrderId)
+            if (_context.TOrders == null) { return NotFound(); }
+
+            var TOrders = await _context.TOrders.FindAsync(id);
+
+            if (TOrders == null)
             {
-                return BadRequest("Invalid");
+                return NotFound();
             }
 
-            var existingOrder = await _context.TOrders.FindAsync(id);
+            TOrders.OrderStatusId = orderStatusId;
 
-            if (existingOrder == null) return NotFound("Order not found");
+           await _context.SaveChangesAsync();
 
-
-           // decimal productPrice = await GetProductPrice(existingOrder.ProductId);
-
-           // var totalPrice = productPrice * tPutOrderDTO.Quantity;
-
-            existingOrder.OrderStatusId = tPutOrderDTO.OrderStatusId;
-            existingOrder.Quantity = tPutOrderDTO.Quantity;
-            existingOrder.TotalPrice = tPutOrderDTO.TotalPrice;
-            existingOrder.ShippingAddressId = tPutOrderDTO.ShippingAddressId;
-            existingOrder.BillingAddressId = tPutOrderDTO.BillingAddressId;
-
-
-            //_context.Entry(tOrder).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-                return Ok("Product updated successfully");
-
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TOrderExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
+           return Ok("success");
 
         }
 
@@ -266,69 +239,86 @@ namespace PurrfectpawsApi.Controllers
                 return Problem("Entity set 'PurrfectpawsContext.TOrders'  is null.");
             }
 
-
-            //### Calculation in cart
-            var productDetails = await _context.TProducts.
-                            Where(p => p.ProductId == tOrderDTO.ProductId).
-                            Select(p => new
-                            {
-                                p.ProductDetails.ProductPrice
-                            }).
-                            FirstOrDefaultAsync();
-
-            if (productDetails == null) return Problem("Product not found");
-
-            //check price total
-            var productTotal = productDetails.ProductPrice * tOrderDTO.Quantity;
-            if(productTotal != tOrderDTO.TotalPrice) { return Problem("Total price not same"); }
-
-
-            var existingProduct = await _context.TProducts.FindAsync(tOrderDTO.ProductId);
-
-
-            if (existingProduct == null) return NotFound("Product not found");
-
-            //check & reduce quantity
-            if(tOrderDTO.Quantity > existingProduct.ProductQuantity)
+            if(tOrderDTO.PaymentStatusId == 2)
             {
-                return Problem("Product quantity exceed from available stocks");
-            }
-            else
-            {
-                existingProduct.ProductQuantity = existingProduct.ProductQuantity - tOrderDTO.Quantity;
+                return Problem("Payment failed");
 
             }
 
+            var cartList = _context.TCarts.Where(c => c.UserId == tOrderDTO.UserId).ToList();  
+
+            if (cartList.Count == 0) { return BadRequest("Cart not found");  }
+
+            var totalProduct = 00.00M;
 
             var orderMasterId = await CreateMasterOrder(tOrderDTO.UserId);
 
-
-            var tOrder = new TOrder
+            foreach (var cart in cartList)
             {
-                // Associate the order with the existing product
-                Product = existingProduct,
-                ShippingAddressId = tOrderDTO.ShippingAddressId,
-                BillingAddressId = tOrderDTO.BillingAddressId,
-                OrderMasterId = orderMasterId,
-                OrderStatusId = 1,
-                Quantity = tOrderDTO.Quantity,
-                TotalPrice = tOrderDTO.TotalPrice
-            };
+                //### Calculation in cart
+                var productDetails = await _context.TProducts.
+                                Where(p => p.ProductId == cart.ProductId).
+                                Select(p => new
+                                {
+                                    p.ProductDetails.ProductPrice,
+                                    p.ProductQuantity
+                                }).
+                                FirstOrDefaultAsync();
+                if (productDetails == null) return Problem("Product not found");
 
-            _context.TOrders.Add(tOrder);
+                //check and calculat product price 
+                var productTotal = productDetails.ProductPrice * cart.Quantity;
+                totalProduct += productTotal;
+
+                //////////////////////////////////////////////////////////////
+
+                 var existingProduct = await _context.TProducts.FindAsync(cart.ProductId);
+
+                if (existingProduct == null) return NotFound("Product not found");
+
+                //check & reduce quantity
+                if (cart.Quantity > existingProduct.ProductQuantity)
+                {
+                    return Problem("Product quantity exceed from available stocks");
+                }
+                else
+                {
+                    existingProduct.ProductQuantity = existingProduct.ProductQuantity - cart.Quantity;
+
+                }
+
+                var tOrder = new TOrder
+                {
+                    // Associate the order with the existing product
+                    Product = existingProduct,
+                    ShippingAddressId = tOrderDTO.ShippingAddressId,
+                    BillingAddressId = tOrderDTO.BillingAddressId,
+                    OrderMasterId = orderMasterId,
+                    OrderStatusId = 1,
+                    Quantity = cart.Quantity,
+                    TotalPrice = productTotal
+                };
+
+                _context.TOrders.Add(tOrder);
+
+                //delete item from cart
+                var removeCartItem = await _context.TCarts.FindAsync(cart.CartId);
+                if (removeCartItem == null)
+                {
+                    return NotFound();
+                }
+
+                _context.TCarts.Remove(removeCartItem);
+
+            }
+
+
+            //check price total // add 5 for shipping fee
+            if ((totalProduct+tOrderDTO.ShippingFee) != tOrderDTO.TotalPrice) { return Problem("Total price not same"); }
+
 
             //add transaction
-            CreateTransaction(tOrderDTO.PaymentStatusId , orderMasterId , tOrderDTO.TotalPrice );
-
-            //delete item from cart
-            var removeCartItem = await _context.TCarts.FindAsync(tOrderDTO.CartId);
-            if (removeCartItem == null)
-            {
-                return NotFound();
-            }
-            
-            _context.TCarts.Remove(removeCartItem);
-
+            CreateTransaction(tOrderDTO.PaymentStatusId , orderMasterId , totalProduct );
 
             await _context.SaveChangesAsync();
 
@@ -356,6 +346,34 @@ namespace PurrfectpawsApi.Controllers
 
             return NoContent();
         }
+
+
+
+        [HttpPut("OrderStatus/{orderMasterId}/{orderStatusId}")]
+        public async Task<IActionResult> PutOrderStatus(int orderMasterId, int orderStatusId)
+        {
+            if (_context.TOrders == null) { return NotFound(); }
+
+            var mOrderStatus = await _context.MOrderStatuses.FindAsync(orderStatusId);
+            if (mOrderStatus == null)
+            {
+                return NotFound();
+            }
+
+            var tOrder =  _context.TOrders.Where(o => o.OrderMasterId == orderMasterId).ToList();
+            if (tOrder.Count == 0) { return NotFound(); }
+
+            foreach(var order in tOrder)
+            {
+                order.OrderStatusId = orderStatusId;
+
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok("success");
+        }
+
 
         private bool TOrderExists(int id)
         {

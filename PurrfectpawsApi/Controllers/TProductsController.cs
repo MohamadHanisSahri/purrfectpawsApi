@@ -33,23 +33,19 @@ namespace PurrfectpawsApi.Controllers
           }
 
             var productList = await _context.TProducts
+                   .Where(p => !p.IsDeleted) // Exclude soft deleted records
                   .Include(p => p.ProductDetails)
                   .ThenInclude(p => p.TProductBlobImages)
                   .Include(p => p.ProductDetails)
                   .ThenInclude(p => p.Category)
                   .Select(p => new TProductsDto
                   {
-                      ProductId = p.ProductId,
                       ProductDetailsId = p.ProductDetailsId,
                       ProductName = p.ProductDetails.ProductName,
                       ProductDescription = p.ProductDetails.ProductDescription,
                       ProductPrice = p.ProductDetails.ProductPrice,
                       ProductCategoryId = p.ProductDetails.Category.CategoryId,
                       ProductCategory = p.ProductDetails.Category.Category,
-                      ProductVariation = p.Variation.VariationName,
-                      ProductSize = p.Size.SizeLabel,
-                      ProductLength = p.LeadLength.LeadLength,
-                      StockQuantity = p.ProductQuantity,
                       ProductImages = p.ProductDetails.TProductBlobImages
                           .Select(i => new TProductImagesDto
                           {
@@ -60,6 +56,7 @@ namespace PurrfectpawsApi.Controllers
 
                   })
                 .ToListAsync();
+
 
             return Ok(productList);
         }
@@ -114,6 +111,213 @@ namespace PurrfectpawsApi.Controllers
             return Ok(productList);
         }
 
+        [HttpGet("DetailList/{productDetailsId}")]
+        public async Task<ActionResult<TProductListByProductDetailsIdDto>> GetProductDetails(int productDetailsId)
+        {
+            try
+            {
+                // Query your database using Entity Framework to get product details
+                var productDetails = await _context.TProductDetails
+                    .Include(pd => pd.TProductBlobImages)
+                    .Where(pd => pd.ProductDetailsId == productDetailsId)
+                    .FirstOrDefaultAsync();
+
+                if (productDetails == null)
+                {
+                    return NotFound("Product details not found");
+                }
+
+                // Query your database to get product variations and size details
+                var productVariations = await _context.TProducts
+                    .Where(p => p.ProductDetailsId == productDetailsId)
+                    .Select(p => new TDetailsDto
+                    {
+                        ProductId = p.ProductId,
+                        VariationId = p.VariationId,
+                        VariationName = p.Variation.VariationName,
+                        SizeId = p.SizeId,
+                        SizeLabel = p.Size.SizeLabel,
+                        LeadLengthId = p.LeadLengthId,
+                        LeadLength = p.LeadLength.LeadLength,
+                        ProductQuantity = p.ProductQuantity
+                    })
+                    .ToListAsync();
+
+                // Shape the result into the desired data structure
+                var productDetailsDto = new TProductListByProductDetailsIdDto
+                {
+                    ProductDetailsId = productDetails.ProductDetailsId,
+                    ProductName = productDetails.ProductName,
+                    ProductDescription = productDetails.ProductDescription,
+                    ProductPrice = productDetails.ProductPrice,
+                    Images = productDetails.TProductBlobImages.Select(image => new ImageDetailsDto
+                    {
+                        ProductImageId = image.ProductImageId,
+                        BlobStorageId = "https://storagepurrfectpaws.blob.core.windows.net/storagecontainerpurrfectpaws/" + image.BlobStorageId
+                    }).ToList(),
+                    TDetails = productVariations
+                };
+
+                return Ok(productDetailsDto);
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions appropriately (e.g., log, return error response)
+                return StatusCode(500, "An error occurred while fetching product details.");
+            }
+        }
+
+        [HttpPut("UpdateProductDetails")]
+        public async Task<IActionResult> PutProductDetails([FromBody] TUpdateProductDetailsDto tUpdateProductDetailsDto)
+        {
+            try
+            {
+                // Query your database using Entity Framework to get product details
+                var getDetails = await _context.TProductDetails
+                    .Include(pd => pd.TProductBlobImages)
+                    .Where(pd => pd.ProductDetailsId == tUpdateProductDetailsDto.ProductDetailsId)
+                    .FirstOrDefaultAsync();
+
+                if (tUpdateProductDetailsDto == null)
+                {
+                    return NotFound("Product details not found");
+                }
+
+                // Query your database to get product variations and size details
+                var productVariations = await _context.TProducts
+                    .Where(p => p.ProductDetailsId == tUpdateProductDetailsDto.ProductDetailsId)
+                    .Select(p => new TDetailsDto
+                    {
+                        ProductId = p.ProductId,
+                        VariationId = p.VariationId,
+                        VariationName = p.Variation.VariationName,
+                        SizeId = p.SizeId,
+                        SizeLabel = p.Size.SizeLabel,
+                        LeadLengthId = p.LeadLengthId,
+                        LeadLength = p.LeadLength.LeadLength,
+                        ProductQuantity = p.ProductQuantity
+                    })
+                    .ToListAsync();
+
+                // Shape the result into the desired data structure
+                var productDetailsDto = new TProductListByProductDetailsIdDto
+                {
+                    ProductDetailsId = getDetails.ProductDetailsId,
+                    ProductName = getDetails.ProductName,
+                    ProductDescription = getDetails.ProductDescription,
+                    ProductPrice = getDetails.ProductPrice,
+                    TDetails = productVariations
+                };
+
+                var itemsToRemove = new List<TProduct>();
+
+                foreach (var item in productDetailsDto.TDetails)
+                {
+                    if (!tUpdateProductDetailsDto.TDetails.Any(x => x.ProductId == item.ProductId || item.ProductId == null))
+                    {
+                        var getProduct = await _context.TProducts.FindAsync(item.ProductId);
+
+                        _context.TProducts.Remove(getProduct);
+                        await _context.SaveChangesAsync();
+
+                    }
+                }
+
+                foreach (var item in tUpdateProductDetailsDto.TDetails)
+                {
+                    if (item.ProductId == null)
+                    {
+                        if (item.SizeLabel != null)
+                        {
+                          var sizeId = await _context.MSizes
+                                .Where(p => p.SizeLabel == item.SizeLabel)
+                                .FirstOrDefaultAsync();
+                           
+                            if (sizeId == null)
+                            {
+                                return NotFound("Size does not exist!");
+                            }
+                          var variationId = await _context.TVariations
+                                .Where(p => p.VariationName == item.VariationName)
+                                .FirstOrDefaultAsync();
+
+                            if (variationId == null)
+                            {
+                                return NotFound("Variation does not exist!");
+                            }
+                            var tProduct = new TProduct
+                            {
+                                ProductDetailsId = tUpdateProductDetailsDto.ProductDetailsId,
+                                SizeId = sizeId?.SizeId ?? 0,
+                                LeadLengthId = null,
+                                VariationId = variationId?.VariationId ?? 0,
+                                ProductQuantity = item.ProductQuantity
+                            };
+
+                            Console.WriteLine($"ProductDetailsId: {tProduct.ProductDetailsId}, SizeId: {tProduct.SizeId}, LeadLengthId: {tProduct.LeadLengthId}, VariationId: {tProduct.VariationId}, ProductQuantity: {tProduct.ProductQuantity}");
+
+                            _context.TProducts.Add(tProduct);
+                            await _context.SaveChangesAsync();
+                        } else if (item.LeadLength != null)
+                        {
+                            var leadLengthId = await _context.TLeadLengths
+                                  .Where(p => p.LeadLength == item.LeadLength)
+                                  .FirstOrDefaultAsync();
+
+                            if (leadLengthId == null)
+                            {
+                                return NotFound("LeadLength does not exist!");
+                            }
+                            var variationId = await _context.TVariations
+                                  .Where(p => p.VariationName == item.VariationName)
+                                  .FirstOrDefaultAsync();
+
+                            if (variationId == null)
+                            {
+                                return NotFound("Variation does not exist!");
+                            }
+                            var tProduct = new TProduct
+                            {
+                                ProductDetailsId = tUpdateProductDetailsDto.ProductDetailsId,
+                                SizeId = null,
+                                LeadLengthId = leadLengthId?.LeadLengthId ?? 0,
+                                VariationId = variationId?.VariationId ?? 0,
+                                ProductQuantity = item.ProductQuantity
+                            };
+
+                            _context.TProducts.Add(tProduct);
+                            await _context.SaveChangesAsync();
+
+                        }
+
+
+                    }
+                }
+
+                var getProductDetails = await _context.TProductDetails
+                    .Where(p => p.ProductDetailsId == tUpdateProductDetailsDto.ProductDetailsId)
+                    .FirstOrDefaultAsync();
+
+                if (getProductDetails == null)
+                {
+                    return NotFound("Product details not found!");
+                }
+                getProductDetails.ProductDescription = tUpdateProductDetailsDto.ProductDescription;
+                getProductDetails.ProductName = tUpdateProductDetailsDto.ProductName;
+                getProductDetails.ProductPrice = tUpdateProductDetailsDto.ProductPrice;
+
+
+                await _context.SaveChangesAsync();
+                return Ok("Update success");
+
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions appropriately (e.g., log, return error response)
+                return StatusCode(500, "An error occurred while fetching product details.");
+            }
+        }
+
         // GET: api/TProducts/5
         [HttpGet("{id}")]
         public async Task<ActionResult<TProduct>> GetTProduct(int id)
@@ -130,6 +334,7 @@ namespace PurrfectpawsApi.Controllers
                             Include(p => p.Size).
                             Include(p => p.LeadLength).
                             Include(p => p.Variation).
+                            Where(p => !p.IsDeleted). // Exclude soft deleted records
                             FirstOrDefaultAsync( p => p.ProductId == id);
 
 

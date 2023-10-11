@@ -52,6 +52,10 @@ public partial class PurrfectpawsContext : DbContext
 
     public virtual DbSet<TVariation> TVariations { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    => optionsBuilder
+        .AddInterceptors(new SoftDeleteInterceptor());
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<MCategory>(entity =>
@@ -259,6 +263,7 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.QuantitySold).HasColumnName("quantity_sold");
             entity.Property(e => e.SizeId).HasColumnName("size_id");
             entity.Property(e => e.VariationId).HasColumnName("variation_id");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
 
             entity.HasOne(d => d.LeadLength).WithMany(p => p.TProducts)
                 .HasForeignKey(d => d.LeadLengthId)
@@ -277,6 +282,8 @@ public partial class PurrfectpawsContext : DbContext
                 .HasForeignKey(d => d.VariationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_T_Product_T_Variation");
+
+            entity.HasQueryFilter(x => x.IsDeleted == false);
         });
 
         modelBuilder.Entity<TProductBlobImage>(entity =>
@@ -288,11 +295,17 @@ public partial class PurrfectpawsContext : DbContext
             entity.Property(e => e.ProductImageId).HasColumnName("product_image_id");
             entity.Property(e => e.BlobStorageId).HasColumnName("blob_storage_id");
             entity.Property(e => e.ProductDetailsId).HasColumnName("product_details_id");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
+
 
             entity.HasOne(d => d.ProductDetails).WithMany(p => p.TProductBlobImages)
                 .HasForeignKey(d => d.ProductDetailsId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.SetNull)
+                //.OnDelete(DeleteBehavior.ClientCascade)
                 .HasConstraintName("FK_T_Product_Blob_Images_T_Product_Details");
+
+            entity.HasQueryFilter(x => x.IsDeleted == false);
+
         });
 
         modelBuilder.Entity<TProductDetail>(entity =>
@@ -303,6 +316,7 @@ public partial class PurrfectpawsContext : DbContext
 
             entity.Property(e => e.ProductDetailsId).HasColumnName("product_details_id");
             entity.Property(e => e.CategoryId).HasColumnName("category_id");
+            entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
             entity.Property(e => e.ProductCost)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("product_cost");
@@ -329,6 +343,8 @@ public partial class PurrfectpawsContext : DbContext
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_T_Product_Details_M_Category");
+
+            entity.HasQueryFilter(x => x.IsDeleted == false);
         });
 
         modelBuilder.Entity<TProductImage>(entity =>
