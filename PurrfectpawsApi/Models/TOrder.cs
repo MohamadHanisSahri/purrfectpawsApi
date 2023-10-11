@@ -162,6 +162,6 @@ public partial class TPostOrderDTO
     public int UserId { get; set; }
     public int PaymentStatusId { get; set; }
     //public int CartId { get; set; }
-    public decimal ShippingFee { get; set; }
+  //  public decimal ShippingFee { get; set; }
 
 }

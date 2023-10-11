@@ -41,9 +41,3 @@ public partial class TProduct : ISoftDelete
     public bool IsDeleted { get; set; }
 
 }
-
-
-
-
-
-

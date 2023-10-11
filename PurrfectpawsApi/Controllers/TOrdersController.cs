@@ -314,7 +314,7 @@ namespace PurrfectpawsApi.Controllers
 
 
             //check price total // add 5 for shipping fee
-            if ((totalProduct+tOrderDTO.ShippingFee) != tOrderDTO.TotalPrice) { return Problem("Total price not same"); }
+         //   if ((totalProduct+ 5) != tOrderDTO.TotalPrice) { return Problem("Total price not same"); }
 
 
             //add transaction

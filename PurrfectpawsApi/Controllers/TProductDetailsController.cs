@@ -28,10 +28,10 @@ namespace PurrfectpawsApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TProductDetail>>> GetTProductDetails()
         {
-          if (_context.TProductDetails == null)
-          {
-              return NotFound();
-          }
+            if (_context.TProductDetails == null)
+            {
+                return NotFound();
+            }
             return await _context.TProductDetails.ToListAsync();
         }
 
@@ -39,10 +39,10 @@ namespace PurrfectpawsApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<TProductDetail>> GetTProductDetail(int id)
         {
-          if (_context.TProductDetails == null)
-          {
-              return NotFound();
-          }
+            if (_context.TProductDetails == null)
+            {
+                return NotFound();
+            }
             var tProductDetail = await _context.TProductDetails.FindAsync(id);
 
             if (tProductDetail == null)
@@ -116,7 +116,8 @@ namespace PurrfectpawsApi.Controllers
                     _context.MSizes,
                     product => product.SizeId,
                     size => size.SizeId,
-                    (product, size) => new SizeDetailsDto {
+                    (product, size) => new SizeDetailsDto
+                    {
                         SizeId = size.SizeId,
                         SizeLabel = size.SizeLabel,
                         ProductQuantity = product.ProductQuantity
@@ -279,10 +280,10 @@ namespace PurrfectpawsApi.Controllers
         [HttpPost]
         public async Task<ActionResult<TPostProductDetail>> PostTProductDetail([FromForm] TPostProductDetail TPostProductDetail)
         {
-          if (_context.TProductDetails == null)
-          {
-              return Problem("Entity set 'PurrfectpawsContext.TProductDetails'  is null.");
-          }
+            if (_context.TProductDetails == null)
+            {
+                return Problem("Entity set 'PurrfectpawsContext.TProductDetails'  is null.");
+            }
 
             var newProductDetail = new TProductDetail
             {

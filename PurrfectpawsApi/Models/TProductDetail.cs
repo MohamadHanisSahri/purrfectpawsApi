@@ -81,5 +81,3 @@ public partial class TPutProductDetail
     public List<IFormFile> Images { get; set; }
 
 }
-
-

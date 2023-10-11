@@ -48,3 +48,38 @@ public partial class TProductDetailsQuantityDto
     public int ProductId { get; set; }
     public int Quantity { get; set; }
 }
+
+public partial class TDetailsDto
+{
+    public int? ProductId { get; set; }
+    public int? SizeId { get; set; } = null;
+    public string? SizeLabel { get; set; }
+    public int? LeadLengthId { get; set; } = null;
+    public decimal? LeadLength { get; set; }
+    public int? VariationId { get; set; } = null;
+
+    public string VariationName { get; set; }
+    public int ProductQuantity { get; set; }
+
+}
+
+public partial class TProductListByProductDetailsIdDto
+{
+    public int ProductDetailsId { get; set; }
+    public string ProductName { get; set; }
+    public string ProductDescription { get; set; }
+    public decimal ProductPrice { get; set; }
+    public List<ImageDetailsDto> Images { get; set; }
+    public List<TDetailsDto> TDetails { get; set; }
+
+}
+
+public partial class TUpdateProductDetailsDto
+{
+    public int ProductDetailsId { get; set; }
+    public string ProductName { get; set; }
+    public string ProductDescription { get; set; }
+    public decimal ProductPrice { get; set; }
+    public List<TDetailsDto> TDetails { get; set; }
+
+}
