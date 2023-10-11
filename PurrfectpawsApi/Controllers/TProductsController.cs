@@ -40,12 +40,17 @@ namespace PurrfectpawsApi.Controllers
                   .ThenInclude(p => p.Category)
                   .Select(p => new TProductsDto
                   {
+                      ProductId = p.ProductId,
                       ProductDetailsId = p.ProductDetailsId,
                       ProductName = p.ProductDetails.ProductName,
                       ProductDescription = p.ProductDetails.ProductDescription,
                       ProductPrice = p.ProductDetails.ProductPrice,
                       ProductCategoryId = p.ProductDetails.Category.CategoryId,
                       ProductCategory = p.ProductDetails.Category.Category,
+                      ProductVariation = p.Variation.VariationName,
+                      ProductSize = p.Size.SizeLabel,
+                      ProductLength = p.LeadLength.LeadLength,
+                      StockQuantity = p.ProductQuantity,
                       ProductImages = p.ProductDetails.TProductBlobImages
                           .Select(i => new TProductImagesDto
                           {
@@ -56,7 +61,6 @@ namespace PurrfectpawsApi.Controllers
 
                   })
                 .ToListAsync();
-
 
             return Ok(productList);
         }
